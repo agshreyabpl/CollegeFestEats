@@ -5,17 +5,25 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 public class Database {
-    private static MongoClient client;
-    private static MongoDatabase db;
+    private static Database instance;
+    private MongoClient client;
+    private MongoDatabase db;
 
-    public static void connect() {
+    private Database() {
         String uri = "mongodb+srv://collegefest_admin:Fest%402024@collegefest.tufvxb5.mongodb.net/?appName=CollegeFest";
         client = MongoClients.create(uri);
         db = client.getDatabase("collegefest");
-        System.out.println("✅ Connected to MongoDB: " + db.getName());
+        System.out.println("Connected to MongoDB: " + db.getName());
     }
 
-    public static MongoDatabase get() {
+    public static synchronized Database getInstance() {
+        if (instance == null) {
+            instance = new Database();
+        }
+        return instance;
+    }
+
+    public MongoDatabase getDb() {
         return db;
     }
 }
