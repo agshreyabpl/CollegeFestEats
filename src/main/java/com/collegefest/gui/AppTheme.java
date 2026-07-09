@@ -1,4 +1,4 @@
-package com.collegefest.gui;
+package main.java.com.collegefest.gui;
 
 import javax.swing.*;
 import java.awt.*;
@@ -86,5 +86,27 @@ public class AppTheme {
         label.setFont(FONT_HEADING);
         label.setForeground(TEXT_PRIMARY);
         return label;
+    }
+
+    /**
+     * Applies dark theme defaults to Swing's built-in dialogs (JOptionPane,
+     * tooltips) via UIManager, so warning/info popups match the rest of the
+     * app instead of showing up as default light-grey Swing dialogs.
+     *
+     * MERGE DAY NOTE: call this once, as early as possible — ideally the
+     * very first line of main() before any frame is constructed. Right now
+     * each dashboard's own main() calls it for standalone testing. Once
+     * Person A's real app entry point (com.collegefest.Main, per the
+     * package structure) exists, move this call there instead, before
+     * LoginFrame is shown, so the login screen's dialogs are themed too.
+     */
+    public static void applyGlobalDefaults() {
+        UIManager.put("OptionPane.background", SURFACE);
+        UIManager.put("Panel.background", SURFACE);
+        UIManager.put("OptionPane.messageForeground", TEXT_PRIMARY);
+        UIManager.put("Button.background", SURFACE_LIGHT);
+        UIManager.put("Button.foreground", TEXT_PRIMARY);
+        UIManager.put("ToolTip.background", SURFACE_LIGHT);
+        UIManager.put("ToolTip.foreground", TEXT_PRIMARY);
     }
 }
