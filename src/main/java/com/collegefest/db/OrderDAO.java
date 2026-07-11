@@ -25,6 +25,9 @@ public class OrderDAO {
                 .append("placedAt", order.getPlacedAt())
                 .append("etaMinutes", order.getEtaMinutes());
         collection.insertOne(doc);
+        // MongoDB generated the _id during insert - copy it back into the
+        // object so callers (cancel, status updates) can reference this order.
+        order.setId(doc.getObjectId("_id").toHexString());
     }
 
     public List<Order> findByStudent(String studentId) {
@@ -46,15 +49,29 @@ public class OrderDAO {
     public long countActiveOrders(String vendorId) {
         return collection.countDocuments(Filters.and(
                 Filters.eq("vendorId", vendorId),
-                Filters.in("status", "pending", "preparing")
+                Filters.in("status", Order.STATUS_PLACED, Order.STATUS_PREPARING)
         ));
     }
 
+    /** Finds one order or throws OrderNotFoundException - never returns null. */
+    public Order findById(String orderId) {
+        Document doc = collection.find(Filters.eq("_id", new ObjectId(orderId))).first();
+        if (doc == null) {
+            throw new com.collegefest.exceptions.OrderNotFoundException(
+                    "No order found with ID: " + orderId);
+        }
+        return toOrder(doc);
+    }
+
     public void updateStatus(String orderId, String newStatus) {
-        collection.updateOne(
+        com.mongodb.client.result.UpdateResult result = collection.updateOne(
                 Filters.eq("_id", new ObjectId(orderId)),
                 Updates.set("status", newStatus)
         );
+        if (result.getMatchedCount() == 0) {
+            throw new com.collegefest.exceptions.OrderNotFoundException(
+                    "No order found with ID: " + orderId);
+        }
     }
 
     private Order toOrder(Document doc) {

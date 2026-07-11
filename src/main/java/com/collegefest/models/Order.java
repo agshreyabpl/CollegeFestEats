@@ -4,6 +4,17 @@ import java.util.Date;
 import java.util.List;
 
 public class Order {
+
+    // Canonical status values - ALWAYS use these constants, never raw
+    // strings, so a typo becomes a compile error instead of a silent bug.
+    // Flow (forward only): PLACED -> PREPARING -> READY -> SERVED;
+    // a PLACED order may instead become CANCELLED.
+    public static final String STATUS_PLACED    = "PLACED";
+    public static final String STATUS_PREPARING = "PREPARING";
+    public static final String STATUS_READY     = "READY";
+    public static final String STATUS_SERVED    = "SERVED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+
     private String id;
     private String studentId;
     private String vendorId;
@@ -18,7 +29,7 @@ public class Order {
         this.studentId = studentId;
         this.vendorId = vendorId;
         this.itemNames = itemNames;
-        this.status = "pending";
+        this.status = STATUS_PLACED;
         this.placedAt = new Date();
     }
 

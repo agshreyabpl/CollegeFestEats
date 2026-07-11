@@ -32,6 +32,13 @@
       <artifactId>jbcrypt</artifactId>
       <version>0.4</version>
     </dependency>
+    <!-- JUnit 5 - run the merged test suite with: mvn test -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -43,9 +50,30 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.collegefest.MainServer</mainClass>
+              <!-- FIXED: pointed at a class that doesn't exist (MainServer) -->
+              <mainClass>com.collegefest.Main</mainClass>
             </manifest>
           </archive>
+        </configuration>
+      </plugin>
+      <!-- Surefire 3.x is needed for JUnit 5; the 2.x default silently skips it. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <!-- Tests build Swing labels/renderers but never open windows,
+               so they run fine headless (and on CI). -->
+          <argLine>-Djava.awt.headless=true</argLine>
+        </configuration>
+      </plugin>
+      <!-- Run the app with: mvn exec:java -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <mainClass>com.collegefest.Main</mainClass>
         </configuration>
       </plugin>
     </plugins>
