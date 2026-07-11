@@ -76,4 +76,71 @@ public class ModelsTest {
         assertEquals("Rajesh Food Stall", user.getName());
         assertEquals("vendor", user.getRole());
     }
+
+    // ---------------- extra edge cases ----------------
+
+    @Test
+    public void orderNoArgConstructorStartsCompletelyBlank() {
+        // DAOs build objects field-by-field from a Mongo Document using this
+        // constructor - it must not silently default status/placedAt itself,
+        // or a half-populated document could look like a fresh PLACED order.
+        Order order = new Order();
+        assertNull(order.getId());
+        assertNull(order.getStudentId());
+        assertNull(order.getVendorId());
+        assertNull(order.getItemNames());
+        assertNull(order.getStatus());
+        assertNull(order.getPlacedAt());
+        assertEquals(0, order.getEtaMinutes());
+    }
+
+    @Test
+    public void itemNoArgConstructorStartsWithSafeDefaults() {
+        Item item = new Item();
+        assertNull(item.getId());
+        assertNull(item.getVendorId());
+        assertNull(item.getName());
+        assertEquals(0.0, item.getPrice(), 0.0001);
+        assertFalse(item.isAvailable(), "an unset item must never default to available");
+        assertEquals(0, item.getPrepTimeMinutes());
+    }
+
+    @Test
+    public void userNoArgConstructorStartsCompletelyBlank() {
+        User user = new User();
+        assertNull(user.getId());
+        assertNull(user.getUserId());
+        assertNull(user.getPassword());
+        assertNull(user.getName());
+        assertNull(user.getRole());
+    }
+
+    @Test
+    public void orderThreeArgConstructorAcceptsAnEmptyItemList() {
+        // Defensive: an order must not silently gain phantom items if the
+        // cart happened to be built from an empty list somewhere upstream.
+        Order order = new Order("STU001", "VEN001", List.of());
+        assertTrue(order.getItemNames().isEmpty());
+        assertEquals(Order.STATUS_PLACED, order.getStatus());
+    }
+
+    @Test
+    public void itemPriceAcceptsZeroAndFractionalValues() {
+        Item free = new Item("VEN001", "Free Sample", 0.0, true, 1);
+        assertEquals(0.0, free.getPrice(), 0.0001);
+
+        Item priced = new Item("VEN001", "Chai", 19.5, true, 3);
+        assertEquals(19.5, priced.getPrice(), 0.0001);
+    }
+
+    @Test
+    public void settingIdAfterConstructionOverwritesOnlyTheIdField() {
+        // Mongo assigns the _id after insertOne(); make sure setId() never
+        // clobbers any other field that was set via the constructor.
+        Order order = new Order("STU001", "VEN001", List.of("Samosa"));
+        order.setId("665f00000000000000000fff");
+        assertEquals("665f00000000000000000fff", order.getId());
+        assertEquals("STU001", order.getStudentId());
+        assertEquals(Order.STATUS_PLACED, order.getStatus());
+    }
 }

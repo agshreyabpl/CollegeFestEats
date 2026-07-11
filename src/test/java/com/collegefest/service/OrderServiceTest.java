@@ -47,4 +47,53 @@ public class OrderServiceTest {
         OrderService.removeSession("STU_TEST_1");
         assertNull(OrderService.getActiveSessions().get("STU_TEST_1"));
     }
+
+    // ---------------- extra edge cases ----------------
+
+    @Test
+    public void sameStatusIsNotAValidTransition() {
+        // A no-op "move" (e.g. double-clicking "Mark Preparing") must be
+        // rejected just like a real backwards move would be.
+        assertFalse(OrderService.isValidTransition(Order.STATUS_PLACED, Order.STATUS_PLACED));
+        assertFalse(OrderService.isValidTransition(Order.STATUS_READY, Order.STATUS_READY));
+    }
+
+    @Test
+    public void nullNextStatusIsAlwaysRejected() {
+        assertFalse(OrderService.isValidTransition(Order.STATUS_PLACED, null));
+        assertFalse(OrderService.isValidTransition(null, null));
+    }
+
+    @Test
+    public void readyMayNotJumpStraightToCancelled() {
+        // Cancellation is only allowed straight out of PLACED.
+        assertFalse(OrderService.isValidTransition(Order.STATUS_READY, Order.STATUS_CANCELLED));
+        assertFalse(OrderService.isValidTransition(Order.STATUS_SERVED, Order.STATUS_CANCELLED));
+    }
+
+    @Test
+    public void unknownStatusStringIsNeverAValidStartingPoint() {
+        assertFalse(OrderService.isValidTransition("BOGUS_STATUS", Order.STATUS_PREPARING));
+    }
+
+    @Test
+    public void removingASessionThatWasNeverRegisteredIsANoOp() {
+        // Must not throw even though "GHOST" was never put() into the map.
+        assertDoesNotThrow(() -> OrderService.removeSession("GHOST_USER_ID"));
+        assertNull(OrderService.getActiveSessions().get("GHOST_USER_ID"));
+    }
+
+    @Test
+    public void reRegisteringTheSameUserIdOverwritesThePreviousSession() {
+        User first = new User("STU_TEST_2", "hash1", "First Login", "student");
+        User second = new User("STU_TEST_2", "hash2", "Second Login", "student");
+
+        OrderService.registerSession("STU_TEST_2", first);
+        OrderService.registerSession("STU_TEST_2", second);
+
+        assertEquals(second, OrderService.getActiveSessions().get("STU_TEST_2"),
+                "logging in again (e.g. after a stale session) should replace, not duplicate");
+
+        OrderService.removeSession("STU_TEST_2"); // cleanup so other tests aren't affected
+    }
 }

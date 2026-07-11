@@ -34,4 +34,37 @@ public class EtaEngineTest {
         assertEquals(42, busy);
         assertTrue(busy > quiet, "more queue must never shorten the ETA");
     }
+
+    // ---------------- extra edge cases ----------------
+
+    @Test
+    public void baseMinutesOfExactlyOneStillObeysTheFormula() {
+        // boundary just above the "non-positive" fallback branch
+        assertEquals(3, EtaEngine.computeEta(1, 0));  // 1×1+2 = 3
+        assertEquals(6, EtaEngine.computeEta(1, 3));  // 1×4+2 = 6
+    }
+
+    @Test
+    public void zeroBaseMinutesIsTreatedAsTheFiveMinuteFallback() {
+        // baseMinutes == 0 is the exact boundary of the "<= 0" guard
+        assertEquals(EtaEngine.computeEta(5, 0), EtaEngine.computeEta(0, 0));
+    }
+
+    @Test
+    public void veryLargeQueueLengthDoesNotOverflowOrGoNegative() {
+        // queueLength arrives as a long from countDocuments(); make sure the
+        // int cast in computeEta doesn't wrap around for a big backlog.
+        int eta = EtaEngine.computeEta(5, 1000);
+        assertEquals(5 * 1001 + 2, eta);
+        assertTrue(eta > 0, "eta must never come back negative");
+    }
+
+    @Test
+    public void bufferMinutesAreAlwaysAddedEvenWithAnEmptyQueue() {
+        // isolates the "+2" buffer: with queueLength 0, eta must be
+        // strictly greater than baseMinutes alone.
+        int base = 6;
+        int eta = EtaEngine.computeEta(base, 0);
+        assertEquals(base + 2, eta);
+    }
 }
